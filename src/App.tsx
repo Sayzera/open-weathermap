@@ -183,24 +183,36 @@ const SearchItem = styled.div`
   }
 `;
 
+interface saveToHistoryTemp {
+  temp: number;
+  feels_like: number;
+  temp_min: number;
+  temp_max: number;
+  pressure: number;
+  humidity: number;
+  sea_level: number;
+  grnd_level: number;
+}
+
 interface saveToHistoryParams {
   name: string;
-  main: {
-    temp: number;
-    feels_like: number;
-    temp_min: number;
-    temp_max: number;
-    pressure: number;
-    humidity: number;
-    sea_level: number;
-    grnd_level: number;
-  };
+  main: saveToHistoryTemp;
   coord: {
     lat: number;
-    lon: number
-  }
-
+    lon: number;
+  };
 }
+
+
+/**
+ *  TODO: #203042
+ *  Son aramalar kısmındaki herhangi bir liste elemanına tıklanınca doğrudan harita üzerinde markupun o kısma     gitmesi gerekiyor
+ * 
+ * listenin sağına bir çarpı iconu ekleyiniz ve tıklandığında confirm olarak bu işlemi yapmak istiyormusunuz şeklinde sorsun onaylarsa listeden çıkarsın hayır derse işlem yapmasın
+ * 
+ * Harita üzerinde aynı yere 2 kez tıklarsa o zaman state üzerindeki mevcut veriyi update edecek aynı veri 2 kez eklenmeyecek
+ * 
+ */
 
 function App() {
   const API_KEY = "79d4dbc1640d90cdf4e12bbb8774b63f"; // OpenWeather API anahtarı
@@ -217,7 +229,13 @@ function App() {
     | null
   >(null);
 
-  const [searchHistory, setSearchHistory] = useState([]);
+  const [searchHistory, setSearchHistory] = useState<{
+    location:string
+    temp:saveToHistoryParams['main']
+    date:string
+    lat:number
+    lon:number
+  }[]>([]);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -280,104 +298,118 @@ function App() {
     }
   };
 
-  const saveToHistory = (weatherData:saveToHistoryParams) => {
+  const saveToHistory = (weatherData: saveToHistoryParams) => {
     const newData = {
       location: weatherData.name,
-      temp:weatherData.main,
-      date: new Date().toLocaleString('tr-TR'),
+      temp: weatherData.main,
+      date: new Date().toLocaleString("tr-TR"),
       lat: weatherData.coord.lat,
-      lon: weatherData.coord.lon
+      lon: weatherData.coord.lon,
     };
 
-    const updateHistory = [newData,  ...searchHistory]
-
+     const updateHistory = [newData,  ...searchHistory]
     setSearchHistory(updateHistory)
 
+    // setSearchHistory((prev) => {
+    //   // prev.push(newData)
+    //   return [newData, ...prev];
+    // });
   };
 
-
-
-
-
+  console.log(searchHistory, "history");
 
   return (
     <>
-  <AuthProvider isLogin={true}>
-      <GlobalStyle />
-      <MainWrapper>
-        <PageWrapper>
-          <AppContainer>
-            <Title>Hava Durumu Uygulaması:</Title>
-            <MapWrapper>
-              <MapContainer
-                center={position as LatLngExpression}
-                zoom={8}
-                style={{ height: "100%", width: "100%" }}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+      <AuthProvider isLogin={true}>
+        <GlobalStyle />
+        <MainWrapper>
+          <PageWrapper>
+            <AppContainer>
+              <Title>Hava Durumu Uygulaması:</Title>
+              <MapWrapper>
+                <MapContainer
+                  center={position as LatLngExpression}
+                  zoom={8}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
 
-                <Marker position={position as LatLngExpression}>
-                  <Popup>İstanbul</Popup>
-                  <MapEvents onMapClick={handleMapClick} />
-                </Marker>
-              </MapContainer>
-            </MapWrapper>
+                  <Marker position={position as LatLngExpression}>
+                    <Popup>İstanbul</Popup>
+                    <MapEvents onMapClick={handleMapClick} />
+                  </Marker>
+                </MapContainer>
+              </MapWrapper>
 
-            {loading && (
-              <LoadingMessage>Hava durumu bilgisi yükleniyor...</LoadingMessage>
-            )}
-            {error && <ErrorMessage>{error}</ErrorMessage>}
+              {loading && (
+                <LoadingMessage>
+                  Hava durumu bilgisi yükleniyor...
+                </LoadingMessage>
+              )}
+              {error && <ErrorMessage>{error}</ErrorMessage>}
 
-            {weather && !loading && (
-              <WeatherInfo>
-                <h2>{weather?.name}</h2>
+              {weather && !loading && (
+                <WeatherInfo>
+                  <h2>{weather?.name}</h2>
 
-                <WeatherIcon
-                  src={`http://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
-                  alt={
-                    Array.isArray(weather.weather)
-                      ? weather.weather[0].description
-                      : ""
-                  }
-                />
+                  <WeatherIcon
+                    src={`http://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                    alt={
+                      Array.isArray(weather.weather)
+                        ? weather.weather[0].description
+                        : ""
+                    }
+                  />
 
-                <p>
-                  <span>Sıcaklık:</span>
-                  <span>
-                    {!Array.isArray(weather.weather) &&
-                      weather.weather.main.temp}
-                    °C
-                  </span>
-                </p>
+                  <p>
+                    <span>Sıcaklık:</span>
+                    <span>
+                      {!Array.isArray(weather.weather) &&
+                        weather.weather.main.temp}
+                      °C
+                    </span>
+                  </p>
 
-                <p>
-                  <span>Hissedilen:</span>
-                  <span>{weather.main.feels_like}°C</span>
-                </p>
+                  <p>
+                    <span>Hissedilen:</span>
+                    <span>{weather.main.feels_like}°C</span>
+                  </p>
 
-                <p>
-                  <span>Hava Durumu:</span>
-                  <span>{weather.weather[0].description}°C</span>
-                </p>
+                  <p>
+                    <span>Hava Durumu:</span>
+                    <span>{weather.weather[0].description}°C</span>
+                  </p>
 
-                <p>
-                  <span>Nem:</span>
-                  <span>{weather.main.humidity}°C</span>
-                </p>
+                  <p>
+                    <span>Nem:</span>
+                    <span>{weather.main.humidity}°C</span>
+                  </p>
 
-                <p>
-                  <span>Rüzgar Hızı:</span>
-                  <span>{weather.wind.speed}°C</span>
-                </p>
-              </WeatherInfo>
-            )}
-          </AppContainer>
-        </PageWrapper>
-      </MainWrapper>
-  </AuthProvider>
+                  <p>
+                    <span>Rüzgar Hızı:</span>
+                    <span>{weather.wind.speed}°C</span>
+                  </p>
+                </WeatherInfo>
+              )}
+            </AppContainer>
+          </PageWrapper>
+          <SearchHistory>
+            <h3>Son Aramalar</h3>
+            {searchHistory.map((item, index) => {
+              return (
+                <SearchItem>
+                  <div className="location">{item.location}</div>
+                  <div className="temp">{item.temp.temp}</div>
+                  <div className="date">{item.date}</div>
+                </SearchItem>
+              )
+            })}
+          </SearchHistory>
+        </MainWrapper>
+      </AuthProvider>
     </>
   );
 }
@@ -422,7 +454,6 @@ export default App;
 //   gozRengi,
 //   data
 // } = kisiNitelikleri;
-
 
 /**
  *  
