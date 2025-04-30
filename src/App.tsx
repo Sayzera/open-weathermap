@@ -26,6 +26,7 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 // Test 1
+// Test2
 // Ana sayfa düzeni için styled component tanımlamaları
 const MainWrapper = styled.div`
     display: flex;
