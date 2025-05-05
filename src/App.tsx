@@ -154,11 +154,18 @@ const SearchHistory = styled.div`
   }
 `;
 
+const CloseItem = styled.span`
+  position:absolute;
+  top: 11px;
+  right: 6px;
+`;
+
 const SearchItem = styled.div`
   padding: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: background-color 0.2s;
+  position:relative;
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.05);
@@ -203,15 +210,25 @@ interface saveToHistoryParams {
   };
 }
 
-
 /**
  *  TODO: #203042
- *  Son aramalar kısmındaki herhangi bir liste elemanına tıklanınca doğrudan harita üzerinde markupun o kısma     gitmesi gerekiyor
- * 
- * listenin sağına bir çarpı iconu ekleyiniz ve tıklandığında confirm olarak bu işlemi yapmak istiyormusunuz şeklinde sorsun onaylarsa listeden çıkarsın hayır derse işlem yapmasın
- * 
- * Harita üzerinde aynı yere 2 kez tıklarsa o zaman state üzerindeki mevcut veriyi update edecek aynı veri 2 kez eklenmeyecek
+ *  Son aramalar kısmındaki herhangi bir liste elemanına tıklanınca doğrudan harita üzerinde markupun o kısma     gitmesi gerekiyor [X]
+ *
+ * listenin sağına bir çarpı iconu ekleyiniz ve tıklandığında confirm olarak bu işlemi yapmak istiyormusunuz şeklinde sorsun onaylarsa listeden çıkarsın hayır derse işlem yapmasın [x]
+ *
+ * Harita üzerinde aynı yere 2 kez tıklarsa o zaman state üzerindeki mevcut veriyi update edecek aynı veri 2 kez eklenmeyecek [X]
  */
+
+interface SearchHistoryProps  {
+  location: string;
+  temp: saveToHistoryParams["main"];
+  date: string;
+  lat: number;
+  lon: number;
+  key:string;
+}
+
+
 
 function App() {
   const API_KEY = "79d4dbc1640d90cdf4e12bbb8774b63f"; // OpenWeather API anahtarı
@@ -228,13 +245,9 @@ function App() {
     | null
   >(null);
 
-  const [searchHistory, setSearchHistory] = useState<{
-    location:string
-    temp:saveToHistoryParams['main']
-    date:string
-    lat:number
-    lon:number
-  }[]>([]);
+  const [searchHistory, setSearchHistory] = useState<
+  SearchHistoryProps[]
+  >([]);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -304,18 +317,41 @@ function App() {
       date: new Date().toLocaleString("tr-TR"),
       lat: weatherData.coord.lat,
       lon: weatherData.coord.lon,
+      key: weatherData.coord.lat + "-" + weatherData.coord.lon,
     };
 
-     const updateHistory = [newData,  ...searchHistory]
-    setSearchHistory(updateHistory)
+    // const updateHistory = [newData,  ...searchHistory]
+    setSearchHistory((prev: SearchHistoryProps[]) => {
+      const itemIndexNumber = prev?.findIndex(
+        (item: any) => item.key == newData.key
+      );
 
-    // setSearchHistory((prev) => {
-    //   // prev.push(newData)
-    //   return [newData, ...prev];
-    // });
+
+      if (itemIndexNumber == -1) {
+        return [newData, ...prev];
+      }
+
+      const tempArray = [...prev];
+      tempArray[itemIndexNumber] = newData;
+     
+
+      return tempArray;
+    });
   };
 
-  console.log(searchHistory, "history");
+  const deleteFromHistory = (key:string) => {
+
+    const confrim = confirm('Silmek istediğinize emin misiniz?')
+
+    if(!confrim) return
+
+    setSearchHistory((prev) => {
+      return prev?.filter((item) => item.key != key)
+    })
+
+  }
+
+
 
   return (
     <>
@@ -399,12 +435,27 @@ function App() {
             <h3>Son Aramalar</h3>
             {searchHistory.map((item, index) => {
               return (
-                <SearchItem>
+                <SearchItem
+                  onClick={() => {
+                    const newPosition = [item.lat, item.lon];
+                    setPosition(newPosition);
+                    fetchWeather(item.lat, item.lon);
+                  }}
+                >
                   <div className="location">{item.location}</div>
                   <div className="temp">{item.temp.temp}</div>
                   <div className="date">{item.date}</div>
+
+                  
+
+                  <CloseItem onClick={(e) => {
+                    e.stopPropagation()
+                    deleteFromHistory(item.key)
+                  }}>
+                    X
+                  </CloseItem>
                 </SearchItem>
-              )
+              );
             })}
           </SearchHistory>
         </MainWrapper>
