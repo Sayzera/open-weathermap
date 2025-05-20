@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { TodoItem } from ".";
+import { useEffect, useRef, useState } from "react";
 
 const FormWrapper = styled.div`
     display: flex;
@@ -39,49 +40,66 @@ function TodoForm({
     type = "add",
 }: Props) {
     console.log("BBBBBBBBBBBBBBBBBBB: " + form.name + form.description);
+
+    const formRef = useRef<TodoItem>(null);
+
+    useEffect(() => {
+        formRef.current = form;
+    
+    }, [])
+
+
+    
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
         const { name, value } = e.target;
-        if (type === "add") {
-            console.log("zzzzzzzzzzzzz: " + form.name + form.description);
+        // if (type === "add") {
+        //     console.log("zzzzzzzzzzzzz: " + form.name + form.description);
 
-            setForm((prev) => ({
-                ...prev,
-                [name]: value,
-            }));
-        } else if (type === "update") {
-            console.log(
-                "xxxxxxxxxxxxxxxxxxxxx: " + form.name + form.description
-            );
-            setForm({ name: name, description: value });
-        }
+        // } else if (type === "update") {
+     
+        //     setForm({ name: name, description: value });
+        // }
+        
+        setForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     };
 
     const isEmpty = (value: string): boolean => {
         return value.length === 0;
     };
 
+
+
     const handleSave = () => {
-        console.log("000000000000000000000");
         if (type === "add") {
-            console.log("1111111111111111111111");
             if (!isEmpty(form.name) && !isEmpty(form.description))
                 setTodos((prev) => {
                     return [form, ...prev];
                 });
         } else if (type === "update") {
-            console.log("22222222222222222222222");
-
             if (!isEmpty(form.name) && !isEmpty(form.description)) {
-                console.log("3333333333333333333333");
-                setForm(form);
-                console.log(
-                    "CCCCCCCCCCCCCCCCCCCCCCCCC: " + form.name + form.description
-                );
-                setTodos((prev) => {
-                    return [...prev];
-                });
+                const {name, description} =   formRef.current!;  
+
+                setTodos((prev:TodoItem[]) => {
+                    return prev.map((item) => {
+                        if(item.name === name && item.description === description) {
+                            return form
+                        } else {
+                            return item
+                        }
+                    })
+                
+                })
+          
+               
+                // setTodos((prev) => {
+                //     return [...prev];
+                // });
             }
         }
     };
@@ -92,10 +110,12 @@ function TodoForm({
                 type="text"
                 name="name"
                 placeholder="Name"
+                value={form.name}
                 onChange={handleChange}
             />
             <Textarea
                 name="description"
+                value={form.description}
                 placeholder="Description"
                 onChange={handleChange}
             />

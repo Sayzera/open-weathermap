@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { TodoItem } from ".";
 import TodoForm from "./todo-form";
+import { useEffect } from "react";
 
 type Props = {
     setForm: React.Dispatch<React.SetStateAction<TodoItem>>;
@@ -39,6 +40,9 @@ function EditModal({
     type = "add",
     setSelectedForm,
 }: Props) {
+
+   
+  
     return (
         <EditModalWrapper>
             <EditModalBox>
